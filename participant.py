@@ -42,13 +42,13 @@ class Participant:
         self.server_socket.listen(5)
         self.running = True
         
-        print(f"✓ 参与者 '{self.participant_id}' 启动在 {self.host}:{self.port}")
+        print(f"✓ Participant '{self.participant_id}' start at {self.host}:{self.port}")
         
         # 注册到协调者
         if self._register_to_coordinator():
-            print(f"✓ 已注册到协调者 {self.coordinator_host}:{self.coordinator_port}")
+            print(f"✓ Registered to the coordinator {self.coordinator_host}:{self.coordinator_port}")
         else:
-            print(f"✗ 注册到协调者失败")
+            print(f"✗ Registration to the coordinator failed.")
         
         print("=" * 60)
         
@@ -76,7 +76,7 @@ class Participant:
             
             return response == "OK"
         except Exception as e:
-            print(f"注册失败: {e}")
+            print(f"Registration failed: {e}")
             return False
     
     def _listen_for_requests(self):
@@ -94,7 +94,7 @@ class Participant:
                 continue
             except Exception as e:
                 if self.running:
-                    print(f"监听错误: {e}")
+                    print(f"Monitoring error: {e}")
     
     def _handle_request(self, client_socket):
         """处理协调者的请求"""
@@ -105,7 +105,7 @@ class Participant:
             
             # 如果crashed，不处理任何消息
             if self.crashed:
-                print(f"  💥 已崩溃，忽略消息")
+                print(f"  💥 Crashed. Ignore the message")
                 return
             
             message = Message.from_json(data)
@@ -114,17 +114,17 @@ class Participant:
             if response:
                 client_socket.sendall(response.to_json().encode('utf-8'))
         except Exception as e:
-            print(f"处理请求错误: {e}")
+            print(f"Handle request error: {e}")
         finally:
             client_socket.close()
     
     def _process_message(self, message: Message) -> Message:
         """处理消息"""
-        print(f"\n← 收到: {message.msg_type.value} (事务 {message.transaction_id})")
+        print(f"\n← Receive: {message.msg_type.value} (Transaction {message.transaction_id})")
         
         # 模拟失败
         if self.failure_rate > 0 and random.random() < self.failure_rate:
-            print(f"  💥 模拟失败 (失败率: {self.failure_rate*100}%)")
+            print(f"  💥 Simulation fails (Failure rate: {self.failure_rate*100}%)")
             if message.msg_type == MessageType.PREPARE:
                 return Message(MessageType.VOTE_NO, message.transaction_id)
             return None
@@ -146,17 +146,17 @@ class Participant:
         
         # 如果有模拟失败率，检查是否自动拒绝
         if self.failure_rate > 0 and random.random() < self.failure_rate:
-            print(f"  💥 模拟失败 (失败率: {self.failure_rate*100}%)")
-            print(f"  自动投票 NO")
+            print(f"  💥 Simulation fails (Failure rate: {self.failure_rate*100}%)")
+            print(f"  Automatic Voting NO")
             return Message(MessageType.VOTE_NO, message.transaction_id)
         
         # 保存待投票事务，等待用户手动投票
         with self.lock:
             self.pending_vote = (message.transaction_id, transaction_data)
         
-        print(f"  📋 事务数据: {transaction_data}")
-        print(f"  ⏳ 等待投票决策...")
-        print(f"  请输入命令: vote yes 或 vote no")
+        print(f"  📋 Transaction data: {transaction_data}")
+        print(f"  ⏳ Waiting for the voting decision...")
+        print(f"  Please enter the command: vote yes 或 vote no")
         
         # 启动一个线程等待投票，30秒后超时自动投NO
         threading.Thread(
@@ -173,7 +173,7 @@ class Participant:
         time.sleep(timeout)
         with self.lock:
             if self.pending_vote and self.pending_vote[0] == transaction_id:
-                print(f"\n⏰ 投票超时！自动投票 NO")
+                print(f"\n⏰ Voting time out! Automatic Voting NO")
                 self._send_vote_to_coordinator(transaction_id, False)
                 self.pending_vote = None
     
@@ -182,7 +182,7 @@ class Participant:
         time.sleep(timeout)
         with self.lock:
             if self.pending_commit and self.pending_commit[0] == transaction_id:
-                print(f"\n⏰ 确认超时！自动ACK COMMIT")
+                print(f"\n⏰ Confirm timeout! Automatic ACK COMMIT")
                 self._send_ack_to_coordinator(transaction_id, MessageType.ACK_COMMIT)
                 # 执行提交
                 if transaction_id in self.prepared_transactions:
@@ -195,7 +195,7 @@ class Participant:
         time.sleep(timeout)
         with self.lock:
             if self.pending_abort and self.pending_abort[0] == transaction_id:
-                print(f"\n⏰ 确认超时！自动ACK ABORT")
+                print(f"\n⏰ Confirm timeout! Automatic ACK ABORT")
                 self._send_ack_to_coordinator(transaction_id, MessageType.ACK_ABORT)
                 # 执行中止
                 if transaction_id in self.prepared_transactions:
@@ -210,16 +210,16 @@ class Participant:
         
         with self.lock:
             if transaction_id not in self.prepared_transactions:
-                print(f"  ✗ 事务未准备，拒绝提交")
+                print(f"  ✗ The transaction is not prepared and the submission is refused")
                 return Message(MessageType.ACK_ABORT, transaction_id)
             
             # 保存待确认的COMMIT
             self.pending_commit = (transaction_id, transaction_data)
         
-        print(f"  📋 收到COMMIT请求")
-        print(f"  事务数据: {transaction_data}")
-        print(f"  ⏳ 等待确认...")
-        print(f"  请输入命令: ack commit 或 ack abort")
+        print(f"  📋 Received the COMMIT request")
+        print(f"  Transaction data: {transaction_data}")
+        print(f"  ⏳ Waiting for confirmation...")
+        print(f"  Please enter the command: ack commit or ack abort")
         
         # 启动超时线程（30秒后自动ACK）
         threading.Thread(
@@ -239,10 +239,10 @@ class Participant:
             # 保存待确认的ABORT
             self.pending_abort = (transaction_id, transaction_data)
         
-        print(f"  📋 收到ABORT请求")
-        print(f"  事务数据: {transaction_data}")
-        print(f"  ⏳ 等待确认...")
-        print(f"  请输入命令: ack abort")
+        print(f"  📋 Received an ABORT request.")
+        print(f"  Transaction data: {transaction_data}")
+        print(f"  ⏳ Waiting for confirmation...")
+        print(f"  Please enter the command: ack abort")
         
         # 启动超时线程（30秒后自动ACK）
         threading.Thread(
@@ -292,17 +292,17 @@ class Participant:
                 with self.lock:
                     self.prepared_transactions.add(transaction_id)
                 vote_msg = Message(MessageType.VOTE_YES, transaction_id)
-                print(f"  ✓ 已投票 YES")
+                print(f"  ✓ Voted YES")
             else:
                 vote_msg = Message(MessageType.VOTE_NO, transaction_id)
-                print(f"  ✗ 已投票 NO")
+                print(f"  ✗ Voted NO")
             
             # 使用特殊标记表示这是一个延迟的投票响应
             vote_data = f"VOTE_RESPONSE|{self.participant_id}|{vote_msg.to_json()}"
             sock.sendall(vote_data.encode('utf-8'))
             sock.close()
         except Exception as e:
-            print(f"发送投票失败: {e}")
+            print(f"Failed to send the vote: {e}")
     
     def _send_ack_to_coordinator(self, transaction_id: str, ack_type: MessageType):
         """向协调者发送ACK确认"""
@@ -319,11 +319,11 @@ class Participant:
             sock.close()
             
             if ack_type == MessageType.ACK_COMMIT:
-                print(f"  ✓ 已确认 COMMIT")
+                print(f"  ✓ Confirmed COMMIT")
             else:
-                print(f"  ✓ 已确认 ABORT")
+                print(f"  ✓ Confirmed ABORT")
         except Exception as e:
-            print(f"发送ACK失败: {e}")
+            print(f"Failed to send ACK: {e}")
     
     def _request_history_from_coordinator(self):
         """从协调者请求历史日志"""
@@ -345,7 +345,7 @@ class Participant:
                 response = Message.from_json(response_data)
                 if response.msg_type == MessageType.HISTORY_RESPONSE:
                     history = response.data.get('history', [])
-                    print(f"\n📜 从协调者获取到 {len(history)} 条历史记录")
+                    print(f"\n📜 Obtain {len(history)} historical records from the coordinator")
                     
                     # 同步历史数据
                     with self.lock:
@@ -363,24 +363,24 @@ class Participant:
                                 if tx_id in self.prepared_transactions:
                                     self.prepared_transactions.remove(tx_id)
                     
-                    print(f"  ✓ 历史数据已同步")
+                    print(f"  ✓ Historical data has been synchronized")
                     return True
         except Exception as e:
-            print(f"请求历史失败: {e}")
+            print(f"Request history failed: {e}")
         return False
     
     def _command_interface(self):
         """命令行界面"""
-        print("\n可用命令:")
-        print("  status            - 查看状态")
-        print("  data              - 查看已提交数据")
-        print("  vote yes/no       - 对待投票事务投票")
-        print("  ack commit/abort  - 确认COMMIT或ABORT")
-        print("  crash             - 模拟崩溃")
-        print("  recover           - 从崩溃中恢复")
-        print("  fail              - 设置失败率")
-        print("  quit              - 退出")
-        print()
+       print(\n available command:)
+       print(" status - View status ")
+       print(" data - View Submitted Data ")
+       print(" vote yes/no - vote against the voting transaction ")
+       print(" ack commit/abort - Confirm COMMIT or ABORT")
+       print(" crash - Simulated crash ")
+       print(" recover - Recover from crash ")
+       print(" fail - Set failure rate ")
+       print(" quit ")
+       print()
         
         while self.running:
             try:
@@ -410,37 +410,37 @@ class Participant:
                 elif cmd_lower == 'fail':
                     self._set_failure_rate()
                 else:
-                    print("未知命令，请使用: status, data, vote yes/no, ack commit/abort, crash, recover, fail, quit")
+                    print("Unknown commands，please use: status, data, vote yes/no, ack commit/abort, crash, recover, fail, quit")
             except KeyboardInterrupt:
-                print("\n使用 'quit' 命令退出")
+                print("\nUse the 'quit' command to exit")
             except Exception as e:
-                print(f"错误: {e}")
+                print(f"Error: {e}")
     
     def _handle_vote_command(self, cmd: str):
         """处理投票命令"""
         parts = cmd.strip().lower().split()
         if len(parts) != 2 or parts[1] not in ['yes', 'no']:
-            print("用法: vote yes 或 vote no")
+            print("Usage: vote yes or vote no")
             return
         
         with self.lock:
             if not self.pending_vote:
-                print("没有待投票的事务")
+                print("There are no matters to be voted on")
                 return
             
             transaction_id, data = self.pending_vote
             vote_yes = (parts[1] == 'yes')
             self.pending_vote = None
         
-        print(f"\n投票事务 {transaction_id}")
-        print(f"  数据: {data}")
+        print(f"\nVoted transaction {transaction_id}")
+        print(f"  Data: {data}")
         self._send_vote_to_coordinator(transaction_id, vote_yes)
     
     def _handle_ack_command(self, cmd: str):
         """处理ACK确认命令"""
         parts = cmd.strip().lower().split()
         if len(parts) != 2 or parts[1] not in ['commit', 'abort']:
-            print("用法: ack commit 或 ack abort")
+            print("Usage: ack commit or ack abort")
             return
         
         ack_commit = (parts[1] == 'commit')
@@ -449,7 +449,7 @@ class Participant:
             # 检查是否有待确认的COMMIT或ABORT
             if ack_commit:
                 if not self.pending_commit:
-                    print("没有待确认的COMMIT")
+                    print("There is no COMMIT to be confirmed")
                     return
                 transaction_id, data = self.pending_commit
                 self.pending_commit = None
@@ -467,7 +467,7 @@ class Participant:
                     transaction_id, data = self.pending_abort
                     self.pending_abort = None
                 else:
-                    print("没有待确认的COMMIT或ABORT")
+                    print("There is no COMMIT or ABORT to be confirmed")
                     return
                 
                 # 执行中止
@@ -475,8 +475,8 @@ class Participant:
                     self.prepared_transactions.remove(transaction_id)
                 self.aborted_transactions.add(transaction_id)
         
-        print(f"\n确认事务 {transaction_id}")
-        print(f"  数据: {data}")
+        print(f"\nConfirmed transaction {transaction_id}")
+        print(f"  Data: {data}")
         
         # 发送ACK
         if ack_commit:
@@ -487,59 +487,59 @@ class Participant:
     def _handle_crash(self):
         """处理崩溃命令"""
         if self.crashed:
-            print("已经处于崩溃状态")
+            print("It is already in a state of collapse")
             return
         
         self.crashed = True
-        print(f"\n💥 {self.participant_id} 已崩溃！")
-        print("  - 将不再接收和处理任何消息")
-        print("  - 使用 'recover' 命令恢复")
+        print(f"\n💥 {self.participant_id} crashes！")
+        print("  - No more messages will be received or processed")
+        print("  - Use 'recover' commands to recover")
     
     def _handle_recover(self):
         """处理恢复命令"""
         if not self.crashed:
-            print("当前未处于崩溃状态")
+            print("It is not currently in a state of collapse")
             return
         
-        print(f"\n🔄 开始恢复 {self.participant_id}...")
+        print(f"\n🔄 Start to recover {self.participant_id}...")
         
         # 重新注册到协调者
         if self._register_to_coordinator():
-            print(f"  ✓ 已重新注册到协调者")
+            print(f"  ✓ Re-registered with the coordinator")
         else:
-            print(f"  ✗ 重新注册失败")
+            print(f"  ✗ Re-registration failed")
             return
         
         # 请求历史日志
-        print("  📡 正在请求历史日志...")
+        print("  📡 Requesting the history log...")
         if self._request_history_from_coordinator():
             self.crashed = False
-            print(f"\n✓ {self.participant_id} 已完全恢复！")
+            print(f"\n✓ {self.participant_id} has been fully recovered！")
         else:
-            print(f"  ✗ 历史同步失败，但已标记为恢复状态")
+            print(f"  ✗ The historical synchronization failed, but it has been marked as a recovery status")
             self.crashed = False
     
     def _show_status(self):
         """显示状态"""
-        print(f"\n参与者状态:")
+        print(f"\nParticipant status:")
         print(f"  ID: {self.participant_id}")
-        print(f"  地址: {self.host}:{self.port}")
-        print(f"  状态: {'💥 已崩溃' if self.crashed else '✓ 正常运行'}")
-        print(f"  失败率: {self.failure_rate*100}%")
+        print(f"  Address: {self.host}:{self.port}")
+        print(f"  Status: {'💥 Crashed' if self.crashed else '✓ run normally'}")
+        print(f"  Fail rate: {self.failure_rate*100}%")
         
         with self.lock:
             has_pending = self.pending_vote is not None
             if has_pending:
                 tx_id, data = self.pending_vote
-                print(f"  待投票事务: {tx_id} - {data}")
+                print(f"  Transactions awaiting voting: {tx_id} - {data}")
         
-        print(f"  已准备事务: {len(self.prepared_transactions)}")
-        print(f"  已提交事务: {len(self.committed_transactions)}")
-        print(f"  已中止事务: {len(self.aborted_transactions)}")
+        print(f"  Prepared transaction: {len(self.prepared_transactions)}")
+        print(f"  Committed transaction: {len(self.committed_transactions)}")
+        print(f"  Aborted transaction: {len(self.aborted_transactions)}")
     
     def _show_data(self):
         """显示已提交的数据"""
-        print(f"\n已提交的事务数据 ({len(self.committed_transactions)}):")
+        print(f"\nSubmitted transaction data ({len(self.committed_transactions)}):")
         if self.committed_transactions:
             for tx_id, data in self.committed_transactions.items():
                 print(f"  {tx_id}: {data}")
@@ -549,18 +549,18 @@ class Participant:
     def _set_failure_rate(self):
         """设置失败率"""
         try:
-            rate = float(input("输入失败率 (0.0-1.0): "))
+            rate = float(input("Input the fail rate (0.0-1.0): "))
             if 0.0 <= rate <= 1.0:
                 self.failure_rate = rate
-                print(f"✓ 失败率已设置为 {rate*100}%")
+                print(f"✓ Fail rate is set as {rate*100}%")
             else:
-                print("失败率必须在0.0-1.0之间")
+                print("The failure rate must be between 0.0 and 1.0")
         except ValueError:
-            print("无效的数值")
+            print("Invalid value")
     
     def stop(self):
         """停止参与者"""
-        print(f"\n正在关闭参与者 {self.participant_id}...")
+        print(f"\n Close the participant {self.participant_id}...")
         self.running = False
         if self.server_socket:
             self.server_socket.close()
@@ -570,8 +570,8 @@ def main():
     import sys
     
     if len(sys.argv) < 2:
-        print("用法: python participant.py <participant_id> [port] [coordinator_port]")
-        print("示例: python participant.py P1 6001 5000")
+        print("Usage: python participant.py <participant_id> [port] [coordinator_port]")
+        print("Example: python participant.py P1 6001 5000")
         sys.exit(1)
     
     participant_id = sys.argv[1]
@@ -592,4 +592,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
