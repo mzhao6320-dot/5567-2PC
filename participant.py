@@ -371,16 +371,16 @@ class Participant:
     
     def _command_interface(self):
         """命令行界面"""
-       print(\n available command:)
-       print(" status - View status ")
-       print(" data - View Submitted Data ")
-       print(" vote yes/no - vote against the voting transaction ")
-       print(" ack commit/abort - Confirm COMMIT or ABORT")
-       print(" crash - Simulated crash ")
-       print(" recover - Recover from crash ")
-       print(" fail - Set failure rate ")
-       print(" quit ")
-       print()
+        print("\n available command:")
+        print(" status - View status ")
+        print(" data - View Submitted Data ")
+        print(" vote yes/no - vote against the voting transaction ")
+        print(" ack commit/abort - Confirm COMMIT or ABORT")
+        print(" crash - Simulated crash ")
+        print(" recover - Recover from crash ")
+        print(" fail - Set failure rate ")
+        print(" quit ")
+        print()
         
         while self.running:
             try:
