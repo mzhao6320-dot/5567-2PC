@@ -510,7 +510,7 @@ class Coordinator:
                     self._complete_commit(tx_id, tx_info)
                 else:
                     # 投票未完成或有NO，发送ABORT
-                    print(f"  💡 Decision: If the voting is not completed or there is a rejection, send "ABORT"")
+                    print(f"  💡 Decision: If the voting is not completed or there is a rejection, send ABORT")
                     self._complete_abort(tx_id, tx_info)
                     
             elif tx_info['status'] == 'COMMITTING':
@@ -602,7 +602,7 @@ class Coordinator:
         # print("  status  - 查看事务状态")
         # print("  quit    - 退出")
         # print()
-        print(\n available command:)
+        print("\n available command:")
         print(" list - List all participants ")
         print(" tx - Initiate a new transaction ")
         print(" crash - Simulated crash ")
