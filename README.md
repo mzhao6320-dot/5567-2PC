@@ -1,217 +1,216 @@
-# 2PC (两阶段提交协议) 演示程序
+# 2PC (Two-Phase Commit Protocol) Demonstration Program
 
-这是一个用Python 3.8实现的两阶段提交协议（Two-Phase Commit Protocol）演示系统。该系统包括一个协调者（Coordinator）和多个参与者（Participant），通过网络通信实现分布式事务的共识。
+This is a demonstration system of the Two-Phase Commit Protocol implemented with Python 3.8. This system consists of a Coordinator and multiple participants, who achieve consensus on distributed transactions through network communication.
 
-## 📋 功能特性
+## 📋 Functional features
 
-- ✅ 完整的2PC协议实现（准备阶段 + 提交/中止阶段）
-- ✅ 协调者和参与者分离，可独立启动
-- ✅ 基于TCP Socket的网络通信
-- ✅ 支持多个参与者同时运行
-- ✅ 交互式命令行界面
-- ✅ 可配置的失败率模拟
-- ✅ 实时事务状态跟踪
-- 🆕 **手动投票机制** - 参与者手动决定投YES或NO
-- 🆕 **Crash功能** - 模拟参与者崩溃
-- 🆕 **Recover功能** - 从崩溃中恢复并同步历史日志
+- ✅ complete 2PC protocol implementation (preparation phase + commit/abort phase)
+- ✅ The coordinator and participants are separated and can be initiated independently
+- ✅ network communication based on TCP Socket
+- ✅ supports multiple participants running simultaneously
+- ✅ interactive command-line interface
+- ✅ configurable failure rate simulation
+- ✅ real-time transaction status tracking
+- 🆕 ** manual voting mechanism ** - participants manually decide to vote YES or NO
+- 🆕 **Crash feature ** - simulate participant crash
+- 🆕 **Recover feature ** - recover from crashes and synchronize history logs
 
-## 🏗️ 系统架构
+## 🏗️ system architecture
 
-```
-┌─────────────────┐
-│   Coordinator   │  (协调者)
+` ` `
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+"Coordinator"
 │   Port: 5000    │
-└────────┬────────┘
-         │
-    ┌────┴────┬────────────┐
-    │         │            │
-┌───▼──┐  ┌──▼───┐    ┌──▼───┐
-│  P1  │  │  P2  │    │  P3  │  (参与者)
-│ 6001 │  │ 6002 │    │ 6003 │
-└──────┘  └──────┘    └──────┘
-```
+└ ─ ─ ─ ─ ─ ─ ─ ─ ┬ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+│
+┌ ─ ─ ─ ─ ┴ ─ ─ ─ ─ ┬ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+│ │ │
+───▼──┐ ──▼──┐ ──▼──┐
+│ P1 │ │ P2 │ │ P3 │ (Participants
+│ 6001 │ │ 6002 │ │ 6003 │
+└──────┘ └───── ┘ └───── ┘
+` ` `
 
-## 🚀 快速开始
+## 🚀 get started quickly
 
-### 1. 启动协调者
+1. Start the coordinator
 
-在第一个终端窗口中运行：
+Run in the first terminal window:
 
 ```bash
 python coordinator.py
-```
+` ` `
 
-默认端口为5000。如果需要指定其他端口：
+The default port is 5000. If other ports need to be specified:
 
 ```bash
 python coordinator.py 5000
-```
+` ` `
 
-### 2. 启动参与者
+2. Start the participants
 
-在其他终端窗口中分别启动多个参与者：
+Start multiple participants separately in other terminal Windows:
 
-**终端 2:**
+Terminal 2
 ```bash
 python participant.py P1 6001
-```
+` ` `
 
-**终端 3:**
+Terminal 3
 ```bash
 python participant.py P2 6002
-```
+` ` `
 
-**终端 4:**
+Terminal 4
 ```bash
 python participant.py P3 6003
-```
+` ` `
 
-参数说明：
-- `P1`, `P2`, `P3`: 参与者ID（可自定义）
-- `6001`, `6002`, `6003`: 参与者端口号
-- 如需指定协调者端口：`python participant.py P1 6001 5000`
+Parameter description
+- 'P1', 'P2', 'P3' : Participant ID (customizable)
+- '6001', '6002', '6003' : Participant port numbers
+- If you need to specify the coordinator port: 'python participant.py P1 6001 5000'
 
-### 3. 执行事务
+3. Execute transactions
 
-在协调者终端中：
+In the Coordinator terminal:
 
-```
+` ` `
 coordinator> tx
-请输入事务数据 (格式: key=value, 例: account=alice,amount=100):
+Please enter the transaction data (format: key=value, example: account=alice,amount=100):
 data> account=alice,amount=100,operation=deposit
-```
+` ` `
 
-系统会自动执行2PC协议：
-1. **阶段1（准备）**: 协调者向所有参与者发送PREPARE请求
-2. **投票**: 参与者响应YES或NO
-3. **阶段2（提交/中止）**: 
-   - 如果所有参与者都投YES，协调者发送COMMIT
-   - 如果有任何参与者投NO，协调者发送ABORT
+The system will automatically execute the 2PC protocol:
+1. ** Phase 1 (Preparation) **: The coordinator sends a PREPARE request to all participants
+2. ** Voting **: Participants respond with YES or NO
+3. ** Phase 2 (Submit/Abort) **:
+If all participants vote "YES", the coordinator sends a COMMIT
+If any participant votes NO, the coordinator sends an ABORT
 
-## 📖 命令说明
+## 📖 command description
 
-### 协调者命令
+Coordinator's Order
 
-| 命令 | 说明 |
+Command: Explanation
 |------|------|
-| `list` | 列出所有已注册的参与者 |
-| `tx` | 发起新事务 |
-| `status` | 查看事务历史和状态 |
-| `quit` | 退出协调者 |
+'list' : List all registered participants
+'tx' initiate a new transaction
+'status' view transaction history and status
+'quit' means to exit the coordinator
 
-### 参与者命令
+Participant Command
 
-| 命令 | 说明 |
+Command: Explanation
 |------|------|
-| `status` | 查看参与者状态 |
-| `data` | 查看已提交的事务数据 |
-| `vote yes/no` | 🆕 对待投票事务投票 |
-| `crash` | 🆕 模拟崩溃 |
-| `recover` | 🆕 从崩溃中恢复并同步历史 |
-| `fail` | 设置失败率（模拟网络故障） |
-| `quit` | 退出参与者 |
+'status' : View the status of participants
+"data" : View the submitted transaction data
+'vote yes/no' : 🆕 vote on the voting transaction
+'crash' : 🆕 simulate a crash
+'recover' : 🆕 recover from a crash and synchronize history
+Set the failure rate (simulating network failure)
+{" id ": 1313841," text ":" > 'quit' > ">" Exit participant >
 
-## 🔬 协议流程示例
+## 🔬 protocol process example
 
-```
-[协调者] 开始事务 TX-001
-[协调者] ──PREPARE──> [P1, P2, P3]
-[P1] <准备成功> ──VOTE_YES──> [协调者]
-[P2] <准备成功> ──VOTE_YES──> [协调者]
-[P3] <准备成功> ──VOTE_YES──> [协调者]
-[协调者] 所有投票通过，决定提交
-[协调者] ──COMMIT──> [P1, P2, P3]
-[P1] <提交成功> ──ACK_COMMIT──> [协调者]
-[P2] <提交成功> ──ACK_COMMIT──> [协调者]
-[P3] <提交成功> ──ACK_COMMIT──> [协调者]
-[协调者] 事务成功提交 ✓
-```
+` ` `
+[Coordinator] Initiates transaction TX-001
+[Coordinator] -- PREPARE -- > [P1, P2, P3]
+[P1] < Ready to Succeed > -- VOTE_YES -- > [Coordinator]
+[P2] < Ready to Succeed > -- VOTE_YES -- > [Coordinator]
+[P3] < Ready to Succeed > -- VOTE_YES -- > [Coordinator]
+[Coordinator] All votes passed and it was decided to submit
+[Coordinator] -- COMMIT -- > [P1, P2, P3]
+[P1] < Commit Successful > -- ACK_COMMIT -- > [Coordinator]
+[P2] < Commit Successful > -- ACK_COMMIT -- > [Coordinator]
+[P3] < Commit Successful > -- ACK_COMMIT -- > [Coordinator]
+[Coordinator] Transaction successfully committed ✓
+` ` `
 
-## 🧪 测试场景
+## 🧪 test scenario
 
-### 场景1: 正常提交
+Scene 1: Normal submission
 
-所有参与者都正常工作，事务应该成功提交。
+All participants are working properly and the transaction should be successfully submitted.
 
-### 场景2: 参与者拒绝
+Scene 2: Participants refuse
 
-在某个参与者中设置失败率：
-```
+Set the failure rate among a certain participant:
+` ` `
 P2> fail
-输入失败率 (0.0-1.0): 1.0
-```
+Input failure rate (0.0-1.0): 1.0
+` ` `
 
-发起事务后，P2会投VOTE_NO，导致整个事务中止。
+After initiating a transaction, P2 will vote VOTE_NO, causing the entire transaction to abort.
 
-### 场景3: 多个参与者
+Scene 3: Multiple participants
 
-启动4个或更多参与者，测试协调者能否正确管理多个节点。
+Start four or more participants to test whether the coordinator can manage multiple nodes correctly.
 
-### 场景4: 动态注册
+Scene 4: Dynamic registration
 
-在协调者运行期间，随时可以启动新的参与者加入网络。
+During the coordinator's operation, new participants can be started to join the network at any time.
 
-## 📁 文件结构
+## 📁 file structure
 
-```
+` ` `
 2pc/
-├── coordinator.py      # 协调者程序
-├── participant.py      # 参与者程序
-├── protocol.py         # 协议消息定义
-├── requirements.txt    # 依赖（本项目仅用标准库）
-└── README.md          # 本文档
-```
+├── Coordinator.py # coordinator program
+├── participant.py # participant program
+├── Protocol.py # protocol message definition
+├── requirements.txt # Dependencies (This project only uses the standard library)
+└── README.md # This document
+` ` `
 
-## 🛠️ 技术实现
+## 🛠️ technical implementation
 
-- **语言**: Python 3.8
-- **网络**: TCP Socket
-- **并发**: Threading（多线程）
-- **序列化**: JSON
-- **架构**: Client-Server模式
+- ** Language: Python 3.8
+- ** Network **: TCP Socket
+- ** Concurrency **: Threading
+- "Serialization" : JSON
+- ** Architecture **: Client-Server mode
 
-## 📝 协议消息类型
+## 📝 protocol message type
 
-### 协调者 → 参与者
-- `PREPARE`: 准备阶段请求
-- `COMMIT`: 提交请求
-- `ABORT`: 中止请求
+Coordinator → Participant
+- 'PREPARE' : Prepare the phase request
+- 'COMMIT' : Submit the request
+- 'ABORT' : Abort the request
 
-### 参与者 → 协调者
-- `VOTE_YES`: 投票同意
-- `VOTE_NO`: 投票拒绝
-- `ACK_COMMIT`: 确认提交
-- `ACK_ABORT`: 确认中止
+Participant → Coordinator
+- 'VOTE_YES' : Vote in favor
+- 'VOTE_NO' : Vote rejected
+- 'ACK_COMMIT' : Confirm the commit
+- 'ACK_ABORT' : Confirm abort
 
-## ⚠️ 注意事项
+## ⚠️ notes
 
-1. 本系统是**演示程序**，用于学习和理解2PC协议，不适合生产环境
-2. 没有实现持久化存储和故障恢复
-3. 没有处理网络分区和超时恢复
-4. 协调者是单点，没有实现协调者故障转移
+1. This system is a demonstration program for learning and understanding the 2PC protocol and is not suitable for production environments
+2. Persistent storage and fault recovery have not been implemented
+3. Network partitioning and timeout recovery were not handled
+4. The coordinator is a single point, and the coordinator failover has not been implemented
 
-## 🎓 学习要点
+## 🎓 Key points to learn
 
-通过本演示，你可以学习到：
-- 2PC协议的完整流程
-- 分布式系统中的共识问题
-- 网络编程和Socket通信
-- 多线程并发处理
-- 事务状态管理
+Through this demonstration, you can learn:
+The complete process of the 2PC protocol
+Consensus issues in distributed systems
+- Network programming and Socket communication
+- Multi-threaded concurrent processing
+- Transaction status management
 
-## 📚 扩展思考
+## 📚 expand thinking
 
-- 如果协调者在阶段2崩溃会怎样？
-- 如果参与者在准备后、提交前崩溃会怎样？
-- 2PC的性能瓶颈在哪里？
-- 3PC（三阶段提交）如何改进2PC？
-- Paxos和Raft等现代共识算法有什么优势？
+What would happen if the coordinator collapsed in Phase 2?
+What would happen if a participant crashed after preparation but before submission?
+Where is the performance bottleneck of -2PC?
+How can 3PC (three-phase submission) improve 2PC?
+What are the advantages of modern consensus algorithms such as Paxos and Raft?
 
-## 🤝 贡献
+## 🤝 contribution
 
-欢迎提交Issue和Pull Request！
+Welcome to submit issues and Pull requests!
 
 ## 📄 License
 
 MIT License
-
